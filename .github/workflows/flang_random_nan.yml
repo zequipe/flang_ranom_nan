@@ -58,4 +58,8 @@ jobs:
           uname -a
           ${{ matrix.compiler }} --version
           ${{ matrix.compiler }} -fstack-arrays -std=f2018 -O3 -ffast-math -g test_div_flang.f90
-          ./a.out
+          # Run a.out 5 times to demonstrate the random NaN generation behavior
+          for i in {1..5}; do
+            echo "Run $i:"
+            ./a.out
+          done
