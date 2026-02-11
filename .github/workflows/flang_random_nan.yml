@@ -1,0 +1,59 @@
+name: Test LLVM Fortran compilers, reproducing a behavior of generating NaN randomly
+
+on:
+  push:
+    branches: [main]
+
+  schedule:
+    - cron: '0 0 1 * *'
+
+  workflow_dispatch:
+
+
+jobs:
+
+  test:
+    name: Run LLVM Flang tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, macos-15-intel]
+        compiler: [armflang, amdflang, flang]  # Compilers to test
+        exclude:
+          - os: ubuntu-latest
+            compiler: armflang
+          - os: ubuntu-24.04-arm
+            compiler: amdflang
+          - os: macos-latest
+            compiler: armflang
+          - os: macos-latest
+            compiler: amdflang
+          - os: macos-15-intel
+            compiler: armflang
+          - os: macos-15-intel
+            compiler: amdflang
+
+
+    steps:
+
+      - name: Clone Repository
+        uses: actions/checkout@v6
+
+      - name: Install Arm Toolchain for Linux
+        if: matrix.compiler == 'armflang'
+        run: bash ./install_atfl
+
+      - name: Install AMD AOMP Flang
+        if: matrix.compiler == 'amdflang'
+        run: bash install_aomp 20 600  # Retry up to 20 times with a delay of 600 seconds between retries, to avoid transient network issues.
+
+      - name: Install LLVM Flang
+        if: matrix.compiler == 'flang'
+        run: bash ./install_llvm
+
+      - name: Conduct the test
+        run: |
+          rm a.out
+          ${{ matrix.compiler }} -fstack-arrays -std=f2018 -O3 -ffast-math -g test_div_flang.f90
+          ./a.out
