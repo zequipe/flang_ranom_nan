@@ -54,6 +54,6 @@ jobs:
 
       - name: Conduct the test
         run: |
-          rm a.out
+          rm -f a.out
           ${{ matrix.compiler }} -fstack-arrays -std=f2018 -O3 -ffast-math -g test_div_flang.f90
           ./a.out
